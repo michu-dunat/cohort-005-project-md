@@ -1,4 +1,13 @@
-import { Outlet } from "react-router";
+import { Outlet, useSearchParams } from "react-router";
+import { PrototypeSwitcher } from "~/components/prototype-switcher";
+import {
+  INBOX_VARIANTS,
+  useProtoNotifications,
+  VariantABell,
+  VariantBNavItem,
+  VariantBPage,
+  VariantCTopBar,
+} from "~/components/notification-inbox.prototype";
 import type { Route } from "./+types/layout.app";
 import { Sidebar } from "~/components/sidebar";
 import { DevUI } from "~/components/dev-ui";
@@ -227,16 +236,26 @@ export default function AppLayout({ loaderData }: Route.ComponentProps) {
     isTeamAdmin: userIsTeamAdmin,
   } = loaderData;
 
+  // PROTOTYPE: notification inbox variants (?variant=A|B|C)
+  const [params] = useSearchParams();
+  const variant = params.get("variant") ?? "A";
+  const inbox = useProtoNotifications(currentUser?.role ?? null, userIsTeamAdmin);
+  const showInboxPage = variant === "B" && params.get("inbox") === "1";
+
   return (
     <div className="flex h-screen overflow-hidden">
       <Sidebar
         currentUser={currentUser}
         recentCourses={recentCourses}
         isTeamAdmin={userIsTeamAdmin}
+        headerSlot={currentUser && variant === "A" ? <VariantABell inbox={inbox} /> : null}
+        navSlot={currentUser && variant === "B" ? <VariantBNavItem inbox={inbox} /> : null}
       />
       <main className="flex-1 overflow-y-auto">
-        <Outlet />
+        {currentUser && variant === "C" && <VariantCTopBar inbox={inbox} />}
+        {showInboxPage ? <VariantBPage inbox={inbox} /> : <Outlet />}
       </main>
+      <PrototypeSwitcher variants={INBOX_VARIANTS} />
       <DevUI
         users={users}
         currentUser={currentUser}
