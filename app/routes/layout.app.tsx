@@ -6,7 +6,7 @@ import {
   VariantABell,
   VariantBNavItem,
   VariantBPage,
-  VariantCTopBar,
+  VariantCBell,
 } from "~/components/notification-inbox.prototype";
 import type { Route } from "./+types/layout.app";
 import { Sidebar } from "~/components/sidebar";
@@ -248,11 +248,16 @@ export default function AppLayout({ loaderData }: Route.ComponentProps) {
         currentUser={currentUser}
         recentCourses={recentCourses}
         isTeamAdmin={userIsTeamAdmin}
-        headerSlot={currentUser && variant === "A" ? <VariantABell inbox={inbox} /> : null}
+        headerSlot={
+          !currentUser ? null : variant === "A" ? (
+            <VariantABell inbox={inbox} />
+          ) : variant === "C" ? (
+            <VariantCBell inbox={inbox} />
+          ) : null
+        }
         navSlot={currentUser && variant === "B" ? <VariantBNavItem inbox={inbox} /> : null}
       />
       <main className="flex-1 overflow-y-auto">
-        {currentUser && variant === "C" && <VariantCTopBar inbox={inbox} />}
         {showInboxPage ? <VariantBPage inbox={inbox} /> : <Outlet />}
       </main>
       <PrototypeSwitcher variants={INBOX_VARIANTS} />

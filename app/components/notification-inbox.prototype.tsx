@@ -8,7 +8,6 @@ import {
   Bell,
   Inbox,
   Megaphone,
-  Check,
   CheckCheck,
   X,
   Receipt,
@@ -540,43 +539,55 @@ export function VariantBPage({ inbox }: { inbox: Inbox }) {
   );
 }
 
-// ─── Variant C: right-hand drawer, Announcements pinned ───────────────────────
-// A bell in a thin top bar opens a drawer over the page. Unread Announcements
-// sit on top as full-text cards you dismiss; event Notifications below, grouped
-// by Today / This week / Earlier, marked read one by one with a tick on hover.
+// ─── Variant C: right-hand drawer, Announcements pinned (CHOSEN) ──────────────
+// Refined after review: a bell with an unread count in the sidebar header opens
+// a drawer from the right. Unread Announcements are pinned on top as full-text
+// cards. Everything else (event Notifications and already-read Announcements)
+// sits below, grouped Today / This week / Earlier; read rows stay, dimmed.
+// Ways to mark read: one "Mark all as read" in the header, a "Mark as read"
+// button that appears on hover, or clicking into the Notification. There is no
+// "mark unread".
 
-export function VariantCTopBar({ inbox }: { inbox: Inbox }) {
+export function VariantCBell({ inbox }: { inbox: Inbox }) {
   const [open, setOpen] = useState(false);
-  const announcements = inbox.items.filter((n) => n.kind === "announcement" && !n.read);
-  const events = inbox.items.filter((n) => n.kind === "event");
+  const pinned = inbox.items.filter((n) => n.kind === "announcement" && !n.read);
+  const rest = inbox.items.filter((n) => !(n.kind === "announcement" && !n.read));
   const buckets = ["Today", "This week", "Earlier"] as const;
   return (
     <>
-      <div className="sticky top-0 z-30 flex h-12 items-center justify-end border-b bg-background/80 px-4 backdrop-blur">
-        <button
-          onClick={() => setOpen(true)}
-          className="flex items-center gap-2 rounded-full border px-3 py-1 text-sm hover:bg-accent"
-        >
-          <Bell className="size-4" />
-          {inbox.unread > 0 ? `${inbox.unread} new` : "No new"}
-        </button>
-      </div>
+      <button
+        onClick={() => setOpen(true)}
+        className="relative rounded-md p-1.5 text-sidebar-foreground/70 hover:bg-sidebar-accent"
+        title="Notifications"
+      >
+        <Bell className="size-5" />
+        <Badge count={inbox.unread} className="absolute -right-1.5 -top-1" />
+      </button>
       {open && (
         <div className="fixed inset-0 z-50 flex justify-end bg-black/30" onClick={() => setOpen(false)}>
           <aside
             onClick={(e) => e.stopPropagation()}
-            className="flex h-full w-[440px] flex-col bg-background shadow-2xl"
+            className="flex h-full w-[440px] flex-col bg-background text-foreground shadow-2xl"
           >
             <div className="flex items-center justify-between border-b px-5 py-4">
               <h2 className="text-lg font-bold">Notifications</h2>
-              <button onClick={() => setOpen(false)} className="rounded p-1 hover:bg-accent">
-                <X className="size-5" />
-              </button>
+              <div className="flex items-center gap-3">
+                <button
+                  onClick={() => inbox.markAllRead()}
+                  disabled={inbox.unread === 0}
+                  className="flex items-center gap-1 text-xs font-medium text-primary disabled:opacity-40"
+                >
+                  <CheckCheck className="size-4" /> Mark all as read
+                </button>
+                <button onClick={() => setOpen(false)} className="rounded p-1 hover:bg-accent">
+                  <X className="size-5" />
+                </button>
+              </div>
             </div>
             <div className="flex-1 space-y-6 overflow-y-auto p-5">
-              {announcements.length > 0 && (
+              {pinned.length > 0 && (
                 <section className="space-y-3">
-                  {announcements.map((n) => (
+                  {pinned.map((n) => (
                     <div key={n.id} className="rounded-lg border border-amber-300 bg-amber-50 p-4 dark:bg-amber-950/30">
                       <div className="mb-1 flex items-center justify-between text-xs font-semibold text-amber-800 dark:text-amber-300">
                         <span className="flex items-center gap-1">
@@ -591,7 +602,7 @@ export function VariantCTopBar({ inbox }: { inbox: Inbox }) {
                           {n.cta} →
                         </Link>
                         <button onClick={() => inbox.markRead(n.id)} className="text-xs text-muted-foreground hover:underline">
-                          Dismiss
+                          Mark as read
                         </button>
                       </div>
                     </div>
@@ -599,34 +610,39 @@ export function VariantCTopBar({ inbox }: { inbox: Inbox }) {
                 </section>
               )}
               {buckets.map((b) => {
-                const xs = events.filter((n) => n.bucket === b);
+                const xs = rest.filter((n) => n.bucket === b);
                 if (xs.length === 0) return null;
-                const unreadHere = xs.some((n) => !n.read);
                 return (
                   <section key={b}>
-                    <div className="mb-2 flex items-center justify-between">
-                      <h3 className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">{b}</h3>
-                      {unreadHere && (
-                        <button
-                          onClick={() => inbox.markAllRead((n) => n.kind === "event" && n.bucket === b)}
-                          className="text-xs text-primary"
-                        >
-                          Mark read
-                        </button>
-                      )}
-                    </div>
+                    <h3 className="mb-2 text-xs font-semibold uppercase tracking-wider text-muted-foreground">{b}</h3>
                     <ul className="space-y-1">
                       {xs.map((n) => (
                         <li
                           key={n.id}
                           className={cn(
-                            "group flex items-start gap-3 rounded-md p-2 hover:bg-accent",
+                            "group relative flex items-start gap-3 rounded-md p-2 hover:bg-accent",
                             n.read && "opacity-60"
                           )}
                         >
                           <span className={cn("mt-2 size-2 shrink-0 rounded-full", n.read ? "bg-transparent" : "bg-primary")} />
-                          <Icon n={n} className="mt-0.5 size-4 shrink-0 text-muted-foreground" />
-                          <Link to={n.href} onClick={() => inbox.markRead(n.id)} className="min-w-0 flex-1">
+                          <Icon
+                            n={n}
+                            className={cn(
+                              "mt-0.5 size-4 shrink-0",
+                              n.kind === "announcement" ? "text-amber-600" : "text-muted-foreground"
+                            )}
+                          />
+                          <Link
+                            to={n.href}
+                            onClick={() => {
+                              inbox.markRead(n.id);
+                              setOpen(false);
+                            }}
+                            className="min-w-0 flex-1"
+                          >
+                            {n.kind === "announcement" && (
+                              <div className="text-[11px] font-semibold text-amber-700">Announcement · {n.from}</div>
+                            )}
                             <div className="text-sm">{n.title}</div>
                             {n.body && <div className="truncate text-xs text-muted-foreground">{n.body}</div>}
                             <div className="text-[11px] text-muted-foreground">{n.ago} ago</div>
@@ -634,10 +650,9 @@ export function VariantCTopBar({ inbox }: { inbox: Inbox }) {
                           {!n.read && (
                             <button
                               onClick={() => inbox.markRead(n.id)}
-                              title="Mark read"
-                              className="invisible rounded p-1 hover:bg-background group-hover:visible"
+                              className="invisible absolute right-2 top-2 rounded-md border bg-background px-2 py-1 text-xs font-medium shadow-sm group-hover:visible"
                             >
-                              <Check className="size-4" />
+                              Mark as read
                             </button>
                           )}
                         </li>
@@ -657,5 +672,5 @@ export function VariantCTopBar({ inbox }: { inbox: Inbox }) {
 export const INBOX_VARIANTS = [
   { key: "A", name: "Bell popover" },
   { key: "B", name: "Inbox page" },
-  { key: "C", name: "Drawer, Announcements pinned" },
+  { key: "C", name: "Drawer, Announcements pinned (chosen)" },
 ];
