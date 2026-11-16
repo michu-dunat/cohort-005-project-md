@@ -1,7 +1,11 @@
 import { Link } from "react-router";
-import { ArrowRight, BookOpen, User } from "lucide-react";
+import { ArrowRight } from "lucide-react";
 import { Button } from "~/components/ui/button";
 import { CourseImage } from "~/components/course-image";
+import {
+  CourseInstructor,
+  CourseLessonCount,
+} from "~/components/course-byline";
 import type { Hero, HeroStat } from "~/modules/landing";
 
 export type SpotlightCourse = {
@@ -98,14 +102,8 @@ function Spotlight({ course }: { course: SpotlightCourse }) {
             {course.description}
           </p>
           <div className="mt-5 flex items-center justify-between text-xs text-muted-foreground">
-            <span className="flex items-center gap-1">
-              <User className="size-3" />
-              {course.instructorName ?? "Instructor"}
-            </span>
-            <span className="flex items-center gap-1">
-              <BookOpen className="size-3" />
-              {course.lessonCount} lessons
-            </span>
+            <CourseInstructor name={course.instructorName} />
+            <CourseLessonCount count={course.lessonCount} />
             <span className="flex items-center gap-1 font-medium text-foreground">
               Start learning
               <ArrowRight className="size-3 transition-transform group-hover:translate-x-0.5" />
