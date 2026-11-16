@@ -27,21 +27,27 @@ import {
   getModuleById,
   getUserById,
   flattenCourseLessons,
+} from "~/modules/lesson-viewer/course.server";
+import {
   getLessonProgress,
   getLessonProgressForCourse,
   markLessonComplete,
   markLessonInProgress,
   getLastWatchPosition,
   calculateWatchProgress,
+} from "~/modules/lesson-viewer/progress.server";
+import {
   getCommentById,
   getLessonThread,
   renderThread,
+} from "~/modules/lesson-viewer/thread.server";
+import {
   getQuizById,
   getQuizByLessonId,
   getQuizWithQuestions,
   getBestAttempt,
   computeResult,
-} from "~/modules/lesson-viewer/index.server";
+} from "~/modules/lesson-viewer/quiz.server";
 import { LockedLesson } from "~/components/lesson-viewer/locked-lesson";
 import { FullLesson } from "~/components/lesson-viewer/full-lesson";
 
