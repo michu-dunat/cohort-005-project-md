@@ -4,24 +4,23 @@ export type NoteDraft = {
   length: number;
   maxLength: number;
   tooLong: boolean;
-  empty: boolean;
   unsaved: boolean;
   canSave: boolean;
 };
 
 export function describeDraft(draft: string, savedBody: string): NoteDraft {
-  const empty = draft.trim().length === 0;
-  const tooLong = draft.length > MAX_NOTE_LENGTH;
-  // The server trims before storing, so trailing whitespace is not a change.
-  const unsaved = draft.trim() !== savedBody;
+  // The server trims before checking and storing, so count and compare what
+  // it will see: trailing whitespace is neither a change nor over the limit.
+  const toStore = draft.trim();
+  const tooLong = toStore.length > MAX_NOTE_LENGTH;
+  const unsaved = toStore !== savedBody;
 
   return {
-    length: draft.length,
+    length: toStore.length,
     maxLength: MAX_NOTE_LENGTH,
     tooLong,
-    empty,
     unsaved,
     // The server rejects an empty note, so an empty draft is never saveable.
-    canSave: unsaved && !empty && !tooLong,
+    canSave: unsaved && toStore.length > 0 && !tooLong,
   };
 }
