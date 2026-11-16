@@ -97,6 +97,15 @@ function buildCourseQuery(
   return sorted.limit(limit).offset(offset).all();
 }
 
+function countPublishedCourses() {
+  const row = db
+    .select({ count: sql<number>`count(*)` })
+    .from(courses)
+    .where(eq(courses.status, CourseStatus.Published))
+    .get();
+  return row?.count ?? 0;
+}
+
 function getLessonCountForCourse(courseId: number) {
   const courseModules = db
     .select({ id: modules.id })
@@ -132,10 +141,10 @@ export async function loader({ request }: Route.LoaderArgs) {
     null,
     CourseStatus.Published,
     "newest",
-    50,
+    3,
     0
   );
-  const featured = courses.slice(0, 3).map((course) => ({
+  const featured = courses.map((course) => ({
     ...course,
     lessonCount: getLessonCountForCourse(course.id),
   }));
@@ -148,7 +157,7 @@ export async function loader({ request }: Route.LoaderArgs) {
 
   return {
     featuredCourses: featured,
-    totalCourses: courses.length,
+    totalCourses: countPublishedCourses(),
     totalCategories: categories.length,
     users: users.map((u) => ({ id: u.id, name: u.name, role: u.role })),
     currentUser: currentUser
