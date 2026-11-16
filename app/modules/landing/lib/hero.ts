@@ -15,15 +15,21 @@ export type Hero<Course> = {
   spotlight: Course | null;
 };
 
-function countStat(count: number, singular: string, plural: string) {
+function countStat(count: number, singular: string, plural: string): HeroStat {
   return { value: String(count), label: count === 1 ? singular : plural };
 }
 
 export function buildHero<Course>(input: HeroInput<Course>): Hero<Course> {
   const counts = [
-    countStat(input.totalCourses, "course", "courses"),
-    countStat(input.totalCategories, "category", "categories"),
-  ].filter((stat) => stat.value !== "0");
+    { count: input.totalCourses, singular: "course", plural: "courses" },
+    {
+      count: input.totalCategories,
+      singular: "category",
+      plural: "categories",
+    },
+  ]
+    .filter(({ count }) => count > 0)
+    .map(({ count, singular, plural }) => countStat(count, singular, plural));
 
   return {
     stats: [...counts, { value: "24/7", label: "self-paced access" }],
